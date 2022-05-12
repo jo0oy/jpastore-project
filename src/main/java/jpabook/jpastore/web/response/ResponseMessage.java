@@ -24,6 +24,8 @@ public enum ResponseMessage {
     READ_ITEMS("상품 리스트 조회 성공"),
     CREATED_CATEGORY("카테고리 생성 성공"),
     READ_CATEGORY("단일 카테고리 조회 성공"),
+    UPDATED_CATEGORY("카테고리 수정 성공"),
+    READ_CATEGORY_LIST("전체 카테고리 리스트 조회 성공"),
     READ_CATEGORY_ITEMS("카테고리별 상품 리스트 조회 성공");
 
     String message;

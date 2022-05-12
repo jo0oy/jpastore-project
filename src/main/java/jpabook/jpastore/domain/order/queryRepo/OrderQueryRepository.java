@@ -15,7 +15,7 @@ public class OrderQueryRepository {
 
     private final EntityManager em;
 
-    public Order findOneWithMemberDelivery(Long orderId) {
+    public Order findOrderWithMemberDelivery(Long orderId) {
         return em.createQuery("select o from Order o" +
                 " join fetch o.member" +
                 " join fetch o.delivery" +
@@ -60,7 +60,7 @@ public class OrderQueryRepository {
 
     public List<OrderSimpleQueryDto> findOrderDtos() {
         return em.createQuery("select new" +
-                " jpabook.jpastore.domain.order.queryRepo.OrderSimpleQueryDto(o.id, m.name, o.orderDateTime, o.status, d.address)" +
+                " jpabook.jpastore.domain.order.queryRepo.OrderSimpleQueryDto(o.id, m.name, o.createdDate, o.status, d.address)" +
                 " from Order o" +
                 " join o.member m" +
                 " join o.delivery d", OrderSimpleQueryDto.class)
@@ -105,7 +105,7 @@ public class OrderQueryRepository {
     private List<OrderQueryDto> findOrdersDto() {
         return em.createQuery(
                 "select" +
-                        " new jpabook.jpastore.domain.order.queryRepo.OrderQueryDto(o.id, m.name, o.orderDateTime, o.status, d.address)" +
+                        " new jpabook.jpastore.domain.order.queryRepo.OrderQueryDto(o.id, m.name, o.createdDate, o.status, d.status, d.address)" +
                         " from Order o" +
                         " join o.member m" +
                         " join o.delivery d" , OrderQueryDto.class)

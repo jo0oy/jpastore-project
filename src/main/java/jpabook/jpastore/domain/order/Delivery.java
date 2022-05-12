@@ -25,7 +25,7 @@ public class Delivery {
     private Address address;
 
     @Enumerated(EnumType.STRING)
-    private DeliveryStatus status; // READY, COMP
+    private DeliveryStatus status;
 
     @Builder
     public Delivery(Order order, Address address, DeliveryStatus status) {
@@ -37,5 +37,20 @@ public class Delivery {
     //==연관관계 메서드==//
     public void setOrder(Order order) {
         this.order = order;
+    }
+
+    //==비즈니스 로직==//
+    //==배달 상태 변경 메서드==//
+    public void changeStatus() {
+        this.status = status.getNext();
+    }
+
+    public void changeStatus(DeliveryStatus status) {
+        this.status = status;
+    }
+
+    //==취소==//
+    public void cancel() {
+        this.status = DeliveryStatus.NONE;
     }
 }

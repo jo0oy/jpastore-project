@@ -5,18 +5,19 @@ import lombok.*;
 import javax.persistence.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
-@ToString
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 public class Category {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
     private Long id;
 
+    @Column(nullable = false)
     private String name;
 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL)
@@ -56,11 +57,12 @@ public class Category {
                 .name(name)
                 .build();
 
-        category.setParent(parent);
-        if (parent != null) {
+        // 카테고리 부모 설정, 부모 카테고리에 this 자식으로 삽입
+        if (Objects.nonNull(parent)) {
             parent.addChild(category);
         }
 
+        // 자식 카테고리 리스트 연관관계 설정
         for (Category c : childList) {
             category.addChild(c);
         }
@@ -68,4 +70,10 @@ public class Category {
         return category;
     }
 
+    //==비즈니스 로직==//
+    public void update(Category parent, String name) {
+        System.out.println("order update method 진입");
+        parent.addChild(this);
+        this.name = name;
+    }
 }

@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -23,5 +24,16 @@ public class Dvd extends Item {
         super(name, price, stockQuantity);
         this.director = director;
         this.actor = actor;
+    }
+
+    //== 비즈니스 로직 메서드 ==//
+    public void updateDvd(String director, String actor) {
+        if (StringUtils.hasText(director)) {
+            this.director = director;
+        }
+
+        if (StringUtils.hasText(actor)) {
+            this.actor = actor;
+        }
     }
 }

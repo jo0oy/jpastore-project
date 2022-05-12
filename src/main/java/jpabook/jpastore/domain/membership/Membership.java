@@ -1,18 +1,16 @@
 package jpabook.jpastore.domain.membership;
 
+import jpabook.jpastore.domain.BaseTimeEntity;
 import jpabook.jpastore.domain.Money;
-import jpabook.jpastore.domain.member.Member;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import javax.persistence.*;
 
+@ToString(of = {"id", "grade", "totalSpending"})
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Getter
 @Entity
-public class Membership {
+public class Membership extends BaseTimeEntity {
 
     @Id
     @GeneratedValue

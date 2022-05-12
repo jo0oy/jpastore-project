@@ -1,13 +1,15 @@
 package jpabook.jpastore.domain.item;
 
-import jpabook.jpastore.application.ItemService;
+import jpabook.jpastore.application.item.ItemServiceImpl;
 import jpabook.jpastore.dto.item.BookItemSaveRequestDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,8 +23,10 @@ class ItemRepositoryTest {
     private ItemRepository itemRepository;
 
     @Autowired
-    private ItemService itemService;
+    private ItemServiceImpl itemService;
 
+    @Transactional
+    @Rollback(false)
     @Test
     @DisplayName("상품 추가 && 추가된 상품 조회")
     public void 추가된_상품_정보_조회() throws Exception {

@@ -7,20 +7,22 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 
-@Data
+@NoArgsConstructor
+@Getter
+@Setter
 public class OrderSimpleQueryDto {
     private Long orderId;
     private String name;
-    private LocalDateTime orderDate; //주문시간
+    private LocalDateTime orderDateTime; //주문시간
     private OrderStatus orderStatus;
     private Address address;
 
     @Builder
-    public OrderSimpleQueryDto(Long orderId, String name, LocalDateTime orderDate,
+    public OrderSimpleQueryDto(Long orderId, String name, LocalDateTime orderDateTime,
                                OrderStatus orderStatus, Address address) {
         this.orderId = orderId;
         this.name = name;
-        this.orderDate = orderDate;
+        this.orderDateTime = orderDateTime;
         this.orderStatus = orderStatus;
         this.address = address;
     }

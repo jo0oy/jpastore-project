@@ -5,7 +5,6 @@ import jpabook.jpastore.domain.order.Order;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,11 +17,11 @@ public class OrderResponseDto {
     private String deliveryStatus;
     private String memberName;
     private Money totalPrice;
-    private List<OrderItemResponseDto> orderItems = new ArrayList<>();
+    private List<OrderItemResponseDto> orderItems;
 
     public OrderResponseDto(Order entity) {
         this.id = entity.getId();
-        this.orderDateTime = entity.getOrderDateTime();
+        this.orderDateTime = entity.getCreatedDate();
         this.orderStatus = entity.getStatus().getMessage();
         this.deliveryStatus = entity.getDelivery().getStatus().getMessage();
         this.memberName = entity.getMember().getName();

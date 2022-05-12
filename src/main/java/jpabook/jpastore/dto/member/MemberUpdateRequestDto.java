@@ -6,13 +6,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @Getter
 public class MemberUpdateRequestDto {
-    private String name;
+    private String phoneNumber;
     private String city;
     private String street;
     private String zipcode;
 
-    public MemberUpdateRequestDto(String name, String city, String street, String zipcode) {
-        this.name = name;
+    public MemberUpdateRequestDto(String phoneNumber, String city, String street, String zipcode) {
+        this.phoneNumber = phoneNumber;
         this.city = city;
         this.street = street;
         this.zipcode = zipcode;

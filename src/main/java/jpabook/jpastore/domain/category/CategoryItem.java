@@ -13,7 +13,7 @@ import javax.persistence.*;
 public class CategoryItem {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_item_id")
     private Long id;
 
@@ -37,12 +37,9 @@ public class CategoryItem {
     //==생성 메서드==//
     public static CategoryItem createCategoryItem(Item item, Category category) {
         CategoryItem ci = new CategoryItem();
-        ci.setCategory(category);
         ci.setItem(item);
+        category.addCategoryItem(ci);
 
         return ci;
     }
-
-
-
 }

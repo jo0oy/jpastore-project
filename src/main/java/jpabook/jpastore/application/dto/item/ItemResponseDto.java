@@ -3,7 +3,9 @@ package jpabook.jpastore.application.dto.item;
 import jpabook.jpastore.domain.Money;
 import jpabook.jpastore.domain.item.Item;
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 @Getter
 public class ItemResponseDto {
 

@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.util.StringUtils;
 
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
@@ -24,5 +25,16 @@ public class Album extends Item {
         super(name, price, stockQuantity);
         this.artist = artist;
         this.etc = etc;
+    }
+
+    //== 비즈니스 로직 메서드 ==//
+    public void updateAlbum(String artist, String etc) {
+        if (StringUtils.hasText(artist)) {
+            this.artist = artist;
+        }
+
+        if (StringUtils.hasText(etc)) {
+            this.etc = etc;
+        }
     }
 }

@@ -4,7 +4,7 @@ import jpabook.jpastore.domain.Address;
 import jpabook.jpastore.domain.order.DeliveryStatus;
 import jpabook.jpastore.domain.order.Order;
 import jpabook.jpastore.domain.order.OrderItem;
-import jpabook.jpastore.domain.order.OrderRepository;
+import jpabook.jpastore.domain.order.repository.OrderRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

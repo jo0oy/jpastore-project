@@ -1,5 +1,6 @@
 package jpabook.jpastore.application;
 
+import jpabook.jpastore.application.membership.MembershipServiceImpl;
 import jpabook.jpastore.domain.Address;
 import jpabook.jpastore.domain.Money;
 import jpabook.jpastore.domain.member.Member;
@@ -30,7 +31,7 @@ class MembershipServiceTest {
     private MembershipRepository membershipRepository;
 
     @Autowired
-    private MembershipService membershipService;
+    private MembershipServiceImpl membershipService;
 
     @BeforeEach
     void init() {
@@ -93,14 +94,14 @@ class MembershipServiceTest {
     public void update_membership_test() {
 
         //when
-        log.info("memberships before updating...");
+        //log.info("memberships before updating...");
         List<Membership> before_update = membershipRepository.findAll();
 
-        log.info("start updating memberships...");
-        membershipService.updateMembership();
+        //log.info("start updating memberships...");
+        membershipService.updateMembershipsByDirtyChecking();
 
         //then
-        log.info("updated memberships....");
+        //log.info("updated memberships....");
         List<Membership> after_update = membershipRepository.findAll();
 
         System.out.println("Before assertions....");

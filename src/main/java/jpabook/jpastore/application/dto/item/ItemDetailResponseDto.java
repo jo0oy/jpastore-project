@@ -7,10 +7,12 @@ import jpabook.jpastore.domain.item.Book;
 import jpabook.jpastore.domain.item.Dvd;
 import jpabook.jpastore.domain.item.Item;
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 @Getter
 @JsonInclude(JsonInclude.Include.NON_NULL)
-public class ItemInfoResponseDto<T extends Item> {
+public class ItemDetailResponseDto<T extends Item> {
     private Long itemId;
     private String itemName;
     private Money price;
@@ -22,7 +24,7 @@ public class ItemInfoResponseDto<T extends Item> {
     private String actor;
     private String director;
 
-    public ItemInfoResponseDto(T entity) {
+    public ItemDetailResponseDto(T entity) {
         this.itemId = entity.getId();
         this.itemName = entity.getName();
         this.price = entity.getPrice();

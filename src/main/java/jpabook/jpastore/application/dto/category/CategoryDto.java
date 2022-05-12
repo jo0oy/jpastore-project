@@ -2,7 +2,9 @@ package jpabook.jpastore.application.dto.category;
 
 import jpabook.jpastore.domain.category.Category;
 import lombok.Getter;
+import lombok.ToString;
 
+@ToString
 @Getter
 public class CategoryDto {
 
