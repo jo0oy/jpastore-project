@@ -1,37 +1,42 @@
 package jpabook.jpastore.application.item;
 
-import jpabook.jpastore.application.dto.item.ItemDetailResponseDto;
-import jpabook.jpastore.application.dto.item.ItemListResponseDto;
-import jpabook.jpastore.application.dto.item.ItemResponseDto;
 import jpabook.jpastore.domain.item.Item;
-import jpabook.jpastore.dto.item.AlbumItemSaveRequestDto;
-import jpabook.jpastore.dto.item.BookItemSaveRequestDto;
-import jpabook.jpastore.dto.item.DvdItemSaveRequestDto;
-import jpabook.jpastore.dto.item.ItemUpdateRequestDto;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 public interface ItemService {
 
-    Long saveBookItem(BookItemSaveRequestDto requestDto);
+    @Transactional
+    Long saveBookItem(ItemCommand.BookItemRegisterReq command);
 
-    Long saveAlbumItem(AlbumItemSaveRequestDto requestDto);
+    @Transactional
+    Long saveAlbumItem(ItemCommand.AlbumItemRegisterReq command);
 
-    Long saveDvdItem(DvdItemSaveRequestDto requestDto);
+    @Transactional
+    Long saveDvdItem(ItemCommand.DvdItemRegisterReq command);
 
-    ItemResponseDto getItem(Long id);
+    ItemInfo.MainInfo getItem(Long id);
 
     <T> T itemDetail_V1(Long id);
 
-    ItemDetailResponseDto<Item> itemDetail_V2(Long id);
+    ItemInfo.DetailInfo<Item> itemDetail_V2(Long id);
 
     // Query Method 사용 버전 : case insensitive
-    ItemListResponseDto<ItemResponseDto> searchItemsByName_V1(String name);
+    List<ItemInfo.MainInfo> searchItemsByName_V1(String name);
 
     // JPQL 사용 버전 : case insensitive
-    ItemListResponseDto<ItemResponseDto> searchItemsByName_V2(String name);
+    List<ItemInfo.MainInfo> searchItemsByName_V2(String name);
 
-    ItemListResponseDto<ItemResponseDto> itemList();
+    Page<ItemInfo.MainInfo> items(ItemCommand.SearchCondition condition, Pageable pageable);
 
-    void updateItemInfo(Long id, ItemUpdateRequestDto requestDto);
+    List<ItemInfo.MainInfo> itemList();
 
+    @Transactional
+    void updateItemInfo(Long id, ItemCommand.UpdateInfoReq command);
+
+    @Transactional
     void delete(Long id);
 }

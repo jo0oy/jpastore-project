@@ -2,18 +2,19 @@ package jpabook.jpastore.domain.order.repository;
 
 import jpabook.jpastore.domain.order.Order;
 import jpabook.jpastore.domain.order.OrderSearchCondition;
-import jpabook.jpastore.domain.order.queryRepo.OrderQueryDto;
-import jpabook.jpastore.domain.order.queryRepo.OrderSimpleQueryDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface OrderRepositoryCustom {
 
-    Order findOrderWithMemberDelivery(Long orderId);
+    Optional<Order> findOrderWithMemberDelivery(Long orderId);
 
-    Order findOrderWithDelivery(Long orderId);
+    Optional<Order> findOrderWithMember(Long orderId);
+
+    Optional<Order> findOrderWithDelivery(Long orderId);
 
     Long findDeliveryId(Long orderId);
 
@@ -21,12 +22,16 @@ public interface OrderRepositoryCustom {
 
     Page<Order> findAllWithMemberDelivery(Pageable pageable);
 
+    List<Order> findAllWithOrderItems();
+
+    List<Order> findAllWithOrderItemsDistinct();
+
     List<Order> findByCondition(OrderSearchCondition orderSearchCondition);
 
     Page<Order> findByCondition(OrderSearchCondition orderSearchCondition, Pageable pageable);
 
-    List<OrderSimpleQueryDto> findAllOrderSimpleDto();
+    List<OrderQueryInfo.SimpleInfo> findAllOrderSimpleInfo();
 
-    List<OrderQueryDto> findAllOrderDto();
+    List<OrderQueryInfo.MainInfo> findAllOrderInfo();
 
 }

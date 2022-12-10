@@ -7,23 +7,27 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "deliveries")
 @Entity
 public class Delivery {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "delivery_id")
     private Long id;
 
-    @OneToOne(mappedBy = "delivery")
+    @OneToOne(mappedBy = "delivery", fetch = FetchType.LAZY)
     private Order order;
 
+    @Column(nullable = false)
     @Embedded
     private Address address;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private DeliveryStatus status;
 

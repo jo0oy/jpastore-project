@@ -9,9 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
-@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
 public class MembershipServiceImpl implements MembershipService {
@@ -26,7 +26,8 @@ public class MembershipServiceImpl implements MembershipService {
     @Transactional
     public void updateMembershipsByDirtyChecking() {
         log.info("updating memberships by dirty checking...");
-        List<Membership> memberships = membershipRepository.findAll();
+        List<Membership> memberships = membershipRepository.findAll().stream()
+                .filter(membership -> !membership.isDeleted()).collect(Collectors.toList());
 
         for (Membership membership : memberships) {
             membership.updateMembership();

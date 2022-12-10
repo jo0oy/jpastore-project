@@ -14,8 +14,11 @@ public class OrderSearchCondition {
     private DeliveryStatus deliveryStatus;
 
     @Builder
-    public OrderSearchCondition(Long memberId, String memberName, Long orderId,
-                                OrderStatus status, DeliveryStatus deliveryStatus) {
+    public OrderSearchCondition(Long memberId,
+                                String memberName,
+                                Long orderId,
+                                OrderStatus status,
+                                DeliveryStatus deliveryStatus) {
         this.memberId = memberId;
         this.memberName = memberName;
         this.orderId = orderId;

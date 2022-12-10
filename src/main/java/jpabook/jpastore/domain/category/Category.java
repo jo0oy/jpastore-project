@@ -3,12 +3,14 @@ package jpabook.jpastore.domain.category;
 import lombok.*;
 
 import javax.persistence.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "categories")
 @Entity
 public class Category {
 
@@ -30,15 +32,20 @@ public class Category {
     @OneToMany(mappedBy = "parent", cascade = CascadeType.ALL)
     private List<Category> child = new ArrayList<>();
 
+    private boolean isDeleted;
+
+    private LocalDateTime deletedAt;
+
     @Builder
     public Category(String name, Category parent) {
         this.name = name;
         this.parent = parent;
+        this.isDeleted = false;
     }
 
     //==연관관계 메서드==//
     public void addCategoryItem(CategoryItem categoryItem) {
-        this.categoryItems.add(categoryItem);
+        this.getCategoryItems().add(categoryItem);
         categoryItem.setCategory(this);
     }
 
@@ -71,9 +78,27 @@ public class Category {
     }
 
     //==비즈니스 로직==//
+
+    /**
+     * 카테고리 정보 수정
+     */
     public void update(Category parent, String name) {
         System.out.println("order update method 진입");
-        parent.addChild(this);
+
+        if (Objects.nonNull(parent)) {
+            parent.addChild(this);
+        } else {
+            this.parent = null;
+        }
+
         this.name = name;
+    }
+
+    /**
+     * 카테고리 삭제
+     */
+    public void delete() {
+        this.isDeleted = true;
+        this.deletedAt = LocalDateTime.now();
     }
 }

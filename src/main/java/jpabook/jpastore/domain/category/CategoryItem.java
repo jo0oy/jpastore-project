@@ -9,6 +9,7 @@ import javax.persistence.*;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "category_items")
 @Entity
 public class CategoryItem {
 

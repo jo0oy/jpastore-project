@@ -1,18 +1,20 @@
 package jpabook.jpastore.domain.category;
 
+import com.querydsl.core.types.dsl.BooleanExpression;
+import com.querydsl.jpa.JPAExpressions;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jpabook.jpastore.domain.item.Item;
-import jpabook.jpastore.domain.item.QItem;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
-import static jpabook.jpastore.domain.category.QCategory.*;
+import static jpabook.jpastore.domain.category.QCategory.category;
 import static jpabook.jpastore.domain.category.QCategoryItem.categoryItem;
-import static jpabook.jpastore.domain.item.QItem.*;
+import static jpabook.jpastore.domain.item.QItem.item;
 
 @RequiredArgsConstructor
 public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
@@ -20,45 +22,72 @@ public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Optional<Category> findByIdFetchJoin(Long id) {
+    public boolean existsByName(String name) {
+        var exist =
+                queryFactory.selectOne()
+                        .from(category)
+                        .where(eqName(name),
+                                notDeleted())
+                        .fetchOne();
+
+        return exist != null;
+    }
+
+    @Override
+    public Optional<Category> findCategoryById(Long categoryId) {
+        return Optional.ofNullable(
+                queryFactory.selectFrom(category)
+                        .where(eqCategoryId(categoryId), notDeleted())
+                        .fetchOne()
+        );
+    }
+
+    @Override
+    public Optional<Category> findCategoryByIdWithParent(Long id) {
         return Optional.ofNullable(
                 queryFactory
                 .selectFrom(category)
                 .join(category.parent).fetchJoin()
-                .where(category.id.eq(id))
-                .fetchOne());
+                .where(eqCategoryId(id),
+                        notDeleted())
+                .fetchOne()
+        );
     }
 
     @Override
-    public Optional<Category> findByNameFetchJoin(String name) {
+    public Optional<Category> findCategoryByNameWithParent(String name) {
         return Optional.ofNullable(
                 queryFactory
                         .selectFrom(category)
                         .join(category.parent).fetchJoin()
-                        .where(category.name.eq(name))
-                        .fetchOne());
+                        .where(eqName(name), notDeleted())
+                        .fetchOne()
+        );
     }
 
     @Override
     public Optional<Category> findParentByCategoryId(Long id) {
-        return Optional.ofNullable(queryFactory
+        return Optional.ofNullable(
+                queryFactory
                 .select(category.parent)
                 .from(category)
                 .innerJoin(category.parent)
-                .where(category.id.eq(id))
-                .fetchOne());
+                .where(eqCategoryId(id), notDeleted())
+                .fetchOne()
+        );
     }
 
     @Override
-    public List<Category> findAllFetchJoin() {
+    public List<Category> findAllWithParents() {
         return queryFactory
                 .selectFrom(category)
                 .leftJoin(category.parent).fetchJoin()
+                .where(notDeleted())
                 .fetch();
     }
 
     @Override
-    public Page<Category> findAllFetchJoin(Pageable pageable) {
+    public Page<Category> findAllWithParents(Pageable pageable) {
         return null;
     }
 
@@ -66,7 +95,7 @@ public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
     public List<Category> findAllRootParents() {
         return queryFactory
                 .selectFrom(category)
-                .where(category.parent.isNull())
+                .where(category.parent.isNull(), notDeleted())
                 .fetch();
     }
 
@@ -75,8 +104,24 @@ public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
         return queryFactory
                 .select(category.id)
                 .from(category)
-                .where(category.parent.id.eq(id))
+                .leftJoin(category.parent)
+                .where(category.parent.id.eq(id), notDeleted())
                 .fetch();
+    }
+
+    @Override
+    public List<Long> findCategoryIdsInChildIdsAndEqName(Long parentId, String name) {
+        return queryFactory
+                .select(category.id)
+                .from(category)
+                .where(category.id.in(
+                        JPAExpressions.select(category.id)
+                        .from(category)
+                        .join(category.parent)
+                        .where(category.parent.id.eq(parentId), notDeleted())),
+                        eqName(name),
+                        notDeleted()
+                ).fetch();
     }
 
     @Override
@@ -89,17 +134,23 @@ public class CategoryRepositoryImpl implements CategoryRepositoryCustom {
     }
 
     @Override
-    public void deleteCategoryItemByItemId(Long id) {
-        queryFactory
-                .delete(categoryItem)
-                .where(categoryItem.item.id.eq(id));
-    }
-
-    @Override
     public long totalCount() {
         return queryFactory
                 .select(category.id)
                 .from(category)
+                .where(notDeleted())
                 .fetchCount();
+    }
+
+    private BooleanExpression notDeleted() {
+        return category.isDeleted.eq(false);
+    }
+
+    private BooleanExpression eqCategoryId(Long categoryId) {
+        return Objects.nonNull(categoryId) ? category.id.eq(categoryId) : null;
+    }
+
+    private BooleanExpression eqName(String name) {
+        return Objects.nonNull(name) ? category.name.eq(name) : null;
     }
 }

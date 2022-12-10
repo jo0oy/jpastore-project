@@ -1,25 +1,25 @@
 package jpabook.jpastore.domain.order.repository;
 
+import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.Projections;
 import com.querydsl.core.types.dsl.BooleanExpression;
-import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import jpabook.jpastore.common.exception.BadRequestException;
 import jpabook.jpastore.domain.order.DeliveryStatus;
 import jpabook.jpastore.domain.order.Order;
 import jpabook.jpastore.domain.order.OrderSearchCondition;
 import jpabook.jpastore.domain.order.OrderStatus;
-import jpabook.jpastore.domain.order.queryRepo.OrderItemQueryDto;
-import jpabook.jpastore.domain.order.queryRepo.OrderQueryDto;
-import jpabook.jpastore.domain.order.queryRepo.OrderSimpleQueryDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.support.PageableExecutionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static jpabook.jpastore.domain.item.QItem.item;
@@ -28,39 +28,55 @@ import static jpabook.jpastore.domain.order.QDelivery.delivery;
 import static jpabook.jpastore.domain.order.QOrder.order;
 import static jpabook.jpastore.domain.order.QOrderItem.orderItem;
 
+
 // 모든 주문 리스트 조회 default order => 최신순 (order id desc)
 @RequiredArgsConstructor
 public class OrderRepositoryImpl implements OrderRepositoryCustom {
 
-    private final JPAQueryFactory jpaQueryFactory;
+    private final JPAQueryFactory queryFactory;
 
     // 일대일 매핑의 delivery, member 와 함께 단일 주문건 조회 (주문 id)
     @Override
-    public Order findOrderWithMemberDelivery(Long orderId) {
-        return jpaQueryFactory
+    public Optional<Order> findOrderWithMemberDelivery(Long orderId) {
+        return Optional.ofNullable(
+                queryFactory
                 .selectFrom(order)
                 .join(order.delivery, delivery).fetchJoin()
                 .join(order.member, member).fetchJoin()
-                .where(order.id.eq(orderId))
-                .fetchOne();
+                .where(eqOrderId(orderId))
+                .fetchOne()
+        );
     }
 
     @Override
-    public Order findOrderWithDelivery(Long orderId) {
-        return jpaQueryFactory
+    public Optional<Order> findOrderWithMember(Long orderId) {
+        return Optional.ofNullable(
+                queryFactory
+                        .selectFrom(order)
+                        .join(order.member, member).fetchJoin()
+                        .where(eqOrderId(orderId))
+                        .fetchOne()
+        );
+    }
+
+    @Override
+    public Optional<Order> findOrderWithDelivery(Long orderId) {
+        return Optional.ofNullable(
+                queryFactory
                 .selectFrom(order)
                 .join(order.delivery, delivery).fetchJoin()
-                .where(order.id.eq(orderId))
-                .fetchOne();
+                .where(eqOrderId(orderId))
+                .fetchOne()
+        );
     }
 
     @Override
     public Long findDeliveryId(Long orderId) {
-        return jpaQueryFactory
+        return queryFactory
                 .select(delivery.id)
                 .from(order)
                 .join(order.delivery, delivery)
-                .where(order.id.eq(orderId))
+                .where(eqOrderId(orderId))
                 .fetchOne();
     }
 
@@ -68,131 +84,177 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
     // 1. list 조회
     @Override
     public List<Order> findAllWithMemberDelivery() {
-        return jpaQueryFactory
+        return queryFactory
                 .selectFrom(order)
                 .join(order.member, member).fetchJoin()
                 .join(order.delivery, delivery).fetchJoin()
-                .orderBy(order.id.desc())
+                .orderBy(order.createdDate.desc())
                 .fetch();
     }
 
     // 2. page 조회
     @Override
     public Page<Order> findAllWithMemberDelivery(Pageable pageable) {
-        List<Order> orders = jpaQueryFactory
+        var orders = queryFactory
                 .selectFrom(order)
                 .join(order.member, member).fetchJoin()
                 .join(order.delivery, delivery).fetchJoin()
                 .limit(pageable.getPageSize())
                 .offset(pageable.getOffset())
-                .orderBy(order.id.desc())
+                .orderBy(getSort(pageable))
                 .fetch();
 
-        JPAQuery<Order> countQuery = jpaQueryFactory.selectFrom(order);
+        var countQuery = queryFactory.selectFrom(order)
+                .join(order.member, member)
+                .join(order.delivery, delivery);
 
-        return PageableExecutionUtils.getPage(orders, pageable, countQuery::fetchCount);
+        return PageableExecutionUtils.getPage(orders, pageable, () -> countQuery.fetch().size());
+    }
+
+    @Override
+    public List<Order> findAllWithOrderItems() {
+        return queryFactory
+                .selectFrom(order)
+                .join(order.member, member).fetchJoin()
+                .join(order.delivery, delivery).fetchJoin()
+                .join(order.orderItems, orderItem).fetchJoin()
+                .join(orderItem.item, item).fetchJoin()
+                .fetch();
+    }
+
+    @Override
+    public List<Order> findAllWithOrderItemsDistinct() {
+        return queryFactory
+                .selectFrom(order)
+                .distinct()
+                .join(order.member, member).fetchJoin()
+                .join(order.delivery, delivery).fetchJoin()
+                .join(order.orderItems, orderItem).fetchJoin()
+                .join(orderItem.item, item).fetchJoin()
+                .fetch();
     }
 
     // order search 여러 조건으로 동적쿼리 조회
     // 1. list 조회
     @Override
     public List<Order> findByCondition(OrderSearchCondition condition) {
-        return jpaQueryFactory
+        return queryFactory
                 .selectFrom(order)
                 .join(order.member, member).fetchJoin()
                 .join(order.delivery, delivery).fetchJoin()
-                .where(memberIdEq(condition.getMemberId()),
-                        orderIdEq(condition.getOrderId()),
-                        memberNameEq(condition.getMemberName()),
-                        orderStatusEq(condition.getStatus()),
-                        deliveryStatusEq(condition.getDeliveryStatus()))
-                .orderBy(order.id.desc())
+                .where(eqMemberId(condition.getMemberId()),
+                        eqOrderId(condition.getOrderId()),
+                        containsMemberName(condition.getMemberName()),
+                        eqOrderStatus(condition.getStatus()),
+                        eqDeliveryStatus(condition.getDeliveryStatus()))
+                .orderBy(order.createdDate.desc())
                 .fetch();
     }
 
     // 2. page 조회
     @Override
     public Page<Order> findByCondition(OrderSearchCondition condition, Pageable pageable) {
-        List<Order> orders = jpaQueryFactory
+        var orders = queryFactory
                 .selectFrom(order)
                 .join(order.member, member).fetchJoin()
                 .join(order.delivery, delivery).fetchJoin()
-                .where(memberIdEq(condition.getMemberId()),
-                        orderIdEq(condition.getOrderId()),
-                        memberNameEq(condition.getMemberName()),
-                        orderStatusEq(condition.getStatus()),
-                        deliveryStatusEq(condition.getDeliveryStatus()))
-                .orderBy(order.id.desc())
+                .where(eqMemberId(condition.getMemberId()),
+                        eqOrderId(condition.getOrderId()),
+                        containsMemberName(condition.getMemberName()),
+                        eqOrderStatus(condition.getStatus()),
+                        eqDeliveryStatus(condition.getDeliveryStatus()))
+                .limit(pageable.getPageSize())
+                .offset(pageable.getOffset())
+                .orderBy(getSort(pageable))
                 .fetch();
 
-        JPAQuery<Order> countQuery = jpaQueryFactory
-                .selectFrom(order)
-                .leftJoin(order.member, member)
-                .leftJoin(order.delivery, delivery)
-                .where(memberIdEq(condition.getMemberId()),
-                        orderIdEq(condition.getOrderId()),
-                        memberNameEq(condition.getMemberName()),
-                        orderStatusEq(condition.getStatus()),
-                        deliveryStatusEq(condition.getDeliveryStatus()));
+        var countQuery =
+                queryFactory.selectFrom(order)
+                .join(order.member, member)
+                .join(order.delivery, delivery)
+                .where(eqMemberId(condition.getMemberId()),
+                        eqOrderId(condition.getOrderId()),
+                        containsMemberName(condition.getMemberName()),
+                        eqOrderStatus(condition.getStatus()),
+                        eqDeliveryStatus(condition.getDeliveryStatus())
+                );
 
-        return PageableExecutionUtils.getPage(orders, pageable, countQuery::fetchCount);
+        return PageableExecutionUtils.getPage(orders, pageable, () -> countQuery.fetch().size());
     }
 
-    // OrderSimpleDto 주문 리스트 조회
+    // Projections 조회
+    // 1. OrderQueryInfo.SimpleInfo 주문 리스트 조회
     @Override
-    public List<OrderSimpleQueryDto> findAllOrderSimpleDto() {
-        return jpaQueryFactory
-                .select(Projections.fields(OrderSimpleQueryDto.class,
+    public List<OrderQueryInfo.SimpleInfo> findAllOrderSimpleInfo() {
+        return queryFactory
+                .select(Projections.constructor(OrderQueryInfo.SimpleInfo.class,
                     order.id.as("orderId"),
-                    order.member.name.as("name"),
-                    order.createdDate.as("orderDateTime"),
+                    order.member.username.as("memberName"),
+                    order.createdDate.as("orderedDate"),
                     order.status.as("orderStatus"),
+                    order.delivery.status.as("deliveryStatus"),
                     order.delivery.address
                 )).from(order)
                 .join(order.member, member)
                 .join(order.delivery, delivery)
-                .orderBy(order.id.desc())
+                .orderBy(order.createdDate.desc())
                 .fetch();
     }
 
     // OrderQueryDto 조회 -> 1. orderIds IN 쿼리로 orderItemDtoMap 생성 / 2. OrderDto 로 조회한 결과에 OrderItemDto set
     @Override
-    public List<OrderQueryDto> findAllOrderDto() {
-        List<OrderQueryDto> result = orderDtoListWithoutOrderItems();
+    public List<OrderQueryInfo.MainInfo> findAllOrderInfo() {
 
-        Map<Long, List<OrderItemQueryDto>> orderItemMap = getOrderItemMap(findOrderIds(result));
+        // 1. orderItem 정보 제외한 MainInfo 리스트 조회
+        var result = orderInfoListWithoutOrderItems();
 
+        // 2. IN 쿼리 활용해 orderId별 orderItem 리스트 맵 생성
+        var orderItemMap = getOrderItemMap(getOrderIds(result));
+
+        // 3. MainInfo 에 해당 orderItem 리스트 매핑
         result.forEach(o -> o.setOrderItems(orderItemMap.get(o.getOrderId())));
 
         return result;
     }
 
-    private Map<Long, List<OrderItemQueryDto>> getOrderItemMap(List<Long> orderIds) {
-        List<OrderItemQueryDto> orderItems = jpaQueryFactory
-                .select(Projections.constructor(OrderItemQueryDto.class,
+    /**
+     *
+     * @param orderIds
+     * @return [orderId - OrderItemInfo 리스트] map
+     */
+    private Map<Long, List<OrderQueryInfo.OrderItemInfo>> getOrderItemMap(List<Long> orderIds) {
+        var orderItems = queryFactory
+                .select(Projections.constructor(OrderQueryInfo.OrderItemInfo.class,
                         orderItem.order.id.as("orderId"),
                         orderItem.item.name.as("itemName"),
                         orderItem.orderPrice.as("orderPrice"),
                         orderItem.quantity
                 ))
                 .from(orderItem)
+                .join(orderItem.order, order)
                 .join(orderItem.item, item)
-                .where(orderItem.order.id.in(orderIds))
+                .where(order.id.in(orderIds))
                 .fetch();
 
-        return orderItems.stream().collect(Collectors.groupingBy(OrderItemQueryDto::getOrderId));
+        return orderItems.stream().collect(Collectors.groupingBy(OrderQueryInfo.OrderItemInfo::getOrderId));
     }
 
-    private List<Long> findOrderIds(List<OrderQueryDto> list) {
-        return list.stream().map(OrderQueryDto::getOrderId).collect(Collectors.toList());
+    /**
+     * orderId 리스트 조회
+     */
+    private List<Long> getOrderIds(List<OrderQueryInfo.MainInfo> list) {
+        return list.stream().map(OrderQueryInfo.MainInfo::getOrderId).collect(Collectors.toList());
     }
 
-    private List<OrderQueryDto> orderDtoListWithoutOrderItems() {
-        return jpaQueryFactory
-                .select(Projections.bean(OrderQueryDto.class,
+    /**
+     * orderItem list 제외한 MainInfo 조회
+     */
+    private List<OrderQueryInfo.MainInfo> orderInfoListWithoutOrderItems() {
+        return queryFactory
+                .select(Projections.constructor(OrderQueryInfo.MainInfo.class,
                         order.id.as("orderId"),
-                        order.member.name.as("name"),
-                        order.createdDate.as("orderDateTime"),
+                        order.member.username.as("memberName"),
+                        order.createdDate.as("orderedDate"),
                         order.status.as("orderStatus"),
                         delivery.status.as("deliveryStatus"),
                         delivery.address
@@ -200,29 +262,54 @@ public class OrderRepositoryImpl implements OrderRepositoryCustom {
                 .from(order)
                 .join(order.member, member)
                 .join(order.delivery, delivery)
-                .orderBy(order.id.desc())
+                .orderBy(order.createdDate.desc())
                 .fetch();
     }
 
 
-    private BooleanExpression deliveryStatusEq(DeliveryStatus deliveryStatus) {
-        return Objects.nonNull(deliveryStatus) ? order.delivery.status.eq(deliveryStatus) : null;
+    private BooleanExpression eqDeliveryStatus(DeliveryStatus deliveryStatus) {
+        return Objects.nonNull(deliveryStatus) ? delivery.status.eq(deliveryStatus) : null;
     }
 
-    private BooleanExpression orderStatusEq(OrderStatus status) {
+    private BooleanExpression eqOrderStatus(OrderStatus status) {
         return Objects.nonNull(status) ? order.status.eq(status) : null;
     }
 
-    private BooleanExpression memberNameEq(String memberName) {
-        return StringUtils.hasText(memberName) ? order.member.name.eq(memberName) : null;
+    private BooleanExpression containsMemberName(String memberName) {
+        return StringUtils.hasText(memberName) ? member.username.containsIgnoreCase(memberName) : null;
     }
 
-    private BooleanExpression memberIdEq(Long memberId) {
-        return Objects.nonNull(memberId) ? order.member.id.eq(memberId) : null;
+    private BooleanExpression eqMemberId(Long memberId) {
+        return Objects.nonNull(memberId) ? member.id.eq(memberId) : null;
     }
 
-    private BooleanExpression orderIdEq(Long orderId) {
+    private BooleanExpression eqOrderId(Long orderId) {
         return Objects.nonNull(orderId) ? order.id.eq(orderId) : null;
     }
 
+    private OrderSpecifier<?> getSort(Pageable pageable) {
+        //서비스에서 보내준 Pageable 객체에 정렬조건 null 값 체크
+        String property = null;
+        if (!pageable.getSort().isEmpty()) {
+            //정렬값이 들어 있으면 for 사용하여 값을 가져온다
+            for (Sort.Order sortOrder : pageable.getSort()) {
+                // 서비스에서 넣어준 DESC or ASC 를 가져온다.
+                com.querydsl.core.types.Order direction = sortOrder.getDirection().isAscending() ? com.querydsl.core.types.Order.ASC : com.querydsl.core.types.Order.DESC;
+                // 서비스에서 넣어준 정렬 조건을 스위치 케이스 문을 활용하여 셋팅하여 준다.
+                property = sortOrder.getProperty();
+                switch (property) {
+                    case "id":
+                        return new OrderSpecifier<>(direction, order.id);
+                    case "order.memberId":
+                        return new OrderSpecifier<>(direction, order.member.id);
+                    case "order.username":
+                        return new OrderSpecifier<>(direction, order.member.username);
+                    case "createdDate":
+                        return new OrderSpecifier<>(direction, order.createdDate);
+                }
+            }
+        }
+
+        throw new BadRequestException("올바르지 않은 정렬 기준 속성입니다. property=" + property);
+    }
 }

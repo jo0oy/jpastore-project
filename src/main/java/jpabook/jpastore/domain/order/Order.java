@@ -3,41 +3,41 @@ package jpabook.jpastore.domain.order;
 import jpabook.jpastore.domain.BaseTimeEntity;
 import jpabook.jpastore.domain.Money;
 import jpabook.jpastore.domain.member.Member;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import jpabook.jpastore.domain.member.Role;
+import lombok.*;
 
 import javax.persistence.*;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "orders")
+@ToString
 @Entity
 public class Order extends BaseTimeEntity {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id")
+    @JoinColumn(name = "member_id", nullable = false, updatable = false)
     private Member member;
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OrderItem> orderItems = new ArrayList<>();
 
     @OneToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @JoinColumn(name = "delivery_id")
+    @JoinColumn(name = "delivery_id", nullable = false)
     private Delivery delivery;
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private OrderStatus status; // PAYMENT_WAITING, ORDER, CANCEL
 
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private Pay payInfo;
 
@@ -91,15 +91,20 @@ public class Order extends BaseTimeEntity {
 
         this.status = OrderStatus.CANCEL;
 
-        delivery.cancel();
+        delivery.cancel(); // 배달 상태 (NONE)으로 변경
 
         for (OrderItem orderItem : orderItems) {
-            orderItem.cancel();
+            orderItem.cancel(); // 취소된 재고 추가
         }
     }
 
     public void updateStatus(OrderStatus status) {
         this.status = status;
+    }
+
+    // 조회/ 변경/ 삭제 권한 확인
+    public boolean hasAuthority(Member member) {
+        return this.getMember().equals(member) || member.getRole() == Role.ADMIN;
     }
 
     //==조회 로직==//
@@ -111,5 +116,4 @@ public class Order extends BaseTimeEntity {
         return new Money(orderItems.stream()
                 .mapToInt(o -> o.getTotalPrice().getValue()).sum());
     }
-
 }

@@ -1,21 +1,22 @@
 package jpabook.jpastore.domain.category;
 
+import jpabook.jpastore.config.TestQuerydslConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(SpringExtension.class)
+@Import(TestQuerydslConfig.class)
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DataJpaTest
 class CategoryRepositoryTest {
 
@@ -24,16 +25,16 @@ class CategoryRepositoryTest {
 
     @Test
     @DisplayName("카테고리_생성_테스트")
-    public void create_category_test() throws Exception {
+    public void create_category_test() {
         //given
-        Category parent = Category.createCategory("도서", null);
+        var parent = Category.createCategory("도서", null);
         categoryRepository.save(parent);
 
-        Category category = Category.createCategory("국내도서", parent);
+        var category = Category.createCategory("국내도서", parent);
         categoryRepository.save(category);
 
         //when
-        List<Category> categoryList = categoryRepository.findAll();
+        var categoryList = categoryRepository.findAll();
 
         //then
         assertThat(categoryList.size()).isEqualTo(2);
@@ -46,7 +47,7 @@ class CategoryRepositoryTest {
     @DisplayName("카테고리_자식_생성")
     @Transactional
     @Rollback(value = false)
-    public void add_child_test() throws Exception {
+    public void add_child_test() {
         //given
         Category parent = Category.createCategory("도서", null);
         categoryRepository.save(parent);
@@ -75,5 +76,4 @@ class CategoryRepositoryTest {
     void cleanUp() {
         categoryRepository.deleteAll();;
     }
-
 }

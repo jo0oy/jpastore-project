@@ -11,26 +11,28 @@ import javax.persistence.*;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "order_items")
 @Entity
 public class OrderItem {
 
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_item_id")
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "item_id")
+    @JoinColumn(name = "item_id", nullable = false)
     private Item item;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "order_id")
+    @JoinColumn(name = "order_id", nullable = false)
     private Order order;
 
     @Embedded
     @AttributeOverride(name = "value", column = @Column(name = "order_price"))
     private Money orderPrice; // 주문 가격
 
+    @Column(nullable = false)
     private int quantity; // 주문 수량
 
     @Builder
@@ -63,7 +65,7 @@ public class OrderItem {
      * 주문 취소 -> 취소한 수량 재고에 추가
      */
     public void cancel() {
-        getItem().addStock(quantity);
+        this.getItem().addStock(quantity);
     }
 
     //==조회 로직==//

@@ -1,51 +1,65 @@
 package jpabook.jpastore.application.order;
 
-import jpabook.jpastore.application.dto.order.OrderListResponseDto;
-import jpabook.jpastore.application.dto.order.OrderResponseDto;
-import jpabook.jpastore.application.dto.order.OrderSimpleDto;
-import jpabook.jpastore.domain.order.Pay;
-import jpabook.jpastore.dto.order.OrderSaveRequestDto;
+import jpabook.jpastore.domain.order.DeliveryStatus;
+import jpabook.jpastore.domain.order.OrderStatus;
+import jpabook.jpastore.domain.order.repository.OrderQueryInfo;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface OrderService {
 
-    // api controller 에서 request dto unwrap 하여 보낸 정보로 주문
-    Long order(Long memberId, Long itemId, int quantity, Pay payInfo);
+    Long order(OrderCommand.OrderRegisterReq command);
 
-    // OrderRequestDto 이용한 주문 생성
-    Long order(OrderSaveRequestDto requestDto);
+    /**
+     * 단일 주문 조회
+     */
 
-    // 1. Spring Data JPA 기본 제공 메서드를 통한 조회
-    // -> Response dto 에서 매핑된 엔티티 정보에 직접 접근하면서 N+1 쿼리 문제 발생!
-    OrderResponseDto getOrder(Long orderId);
+    // 1. spring data jpa 기본 메소드 활용 -> dto 에서 연관관계 매핑 엔티티에 접근하기 때문에 N+1 문제 발생!
+    OrderInfo.MainInfo getOrder(Long orderId, String authUsername);
 
-    // 2. 일대일 매핑 관계 엔티티들(member, delivery) 모두 페치조인, repository 조회 결과 simple dto 로 반환
-    OrderSimpleDto getOrderWithMemberDelivery(Long orderId);
+    // 2. Member, Delivery 페치 조인 조회 후 simple info 로 변환.
+    OrderInfo.SimpleInfo getOrderSimpleInfo(Long orderId, String authUsername);
 
-    // 1. 엔티티를 DTO로 변환
-    OrderListResponseDto<?> listOrder();
+    // 3. getOrder 페치조인 통해 조회 (Member, Delivery)
+    OrderInfo.MainInfo getOrderFetch(Long orderId, String authUsername);
 
-    // 2.ToOne 관계 (Member, Delivery) 페치조인을 사용한 간단 조회
-    List<OrderSimpleDto> listOrderWithMemberDelivery();
+    /**
+     * 전체 주문 조회
+     */
 
-    // 3. JPA에서 DTO를 직접 조회한 간단 조회
-    OrderListResponseDto<?> listOrderDtos();
+    // 1-1. 주문 리스트 조회 - ToOne(Member, Delivery) 페치 조인
+    List<OrderInfo.MainInfo> listOrder();
 
-    // 4. ToMany (OrderItems, Items)에 페치조인을 사용한 전체 조회
-    OrderListResponseDto<?> listOrderWithItems();
+    // 1-2. 주문 리스트 조회 - ToOne(Member, Delivery) 페치 조인 + Paging
+    Page<OrderInfo.MainInfo> listOrder(Pageable pageable);
 
-    // 5. distinct 키워드를 사용한 컬렉션 페치 조인
-    OrderListResponseDto<?> listOrderWithItemsDistinct();
+    // 2. 주문 simple 정보 리스트 조회 - ToOne(Member, Delivery) 페치 조인 + Paging
+    Page<OrderInfo.SimpleInfo> listSimpleOrder(Pageable pageable);
 
-    Page<OrderResponseDto> findAllWithItemsPaging(int offset, int limit);
+    // 3-1. 주문 리스트 조회 - ToOne(Member, Delivery) + [ToMany(OrderItem) 컬렉션] 페치 조인
+    List<OrderInfo.MainInfo> listOrderFetchOrderItems();
 
-    OrderListResponseDto<?> listOrderByDto();
+    // 3-2. 주문 리스트 조회
+    // ToOne(Member, Delivery) + [ToMany(OrderItem) 컬렉션] 페치 조인 + 'distinct' 키워드 추가
+    List<OrderInfo.MainInfo> listOrderFetchOrderItemsDistinct();
 
-    OrderListResponseDto<?> listOrderByDto_optimize();
+    // 4. 검색 조건에 따른 주문 리스트 조회
+    // ToOne(Member, Delivery) 페치 조인 + 검색 조건(OrderSearchCondition) + Paging
+    Page<OrderInfo.MainInfo> listOrder(OrderCommand.OrderSearchCondition condition, Pageable pageable);
 
-    OrderResponseDto addOrderItems(Long orderId, Long itemId, int quantity);
+    // 5-1. 주문 simple 정보 리스트 조회 - 쿼리에서 DTO 직접 조회한 간단 조회
+    List<OrderQueryInfo.SimpleInfo> listOrderSimpleInfos();
 
-    void cancelOrder(Long orderId);
+    // 5-2. 주문 리스트 조회 - 쿼리에서 DTO 직접 조회 (mainInfo)
+    // orderItemMap 을 활용한 최적화 -> 1 + 1 쿼리 호출
+    List<OrderQueryInfo.MainInfo> listOrderQueryInfos();
+
+    void changeDeliveryStatus(Long orderId, DeliveryStatus status);
+
+    void changeOrderStatus(Long orderId, OrderStatus status);
+
+    // 주문 취소
+    void cancelOrder(Long orderId, String authUsername);
 }

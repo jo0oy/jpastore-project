@@ -24,7 +24,7 @@ public class MemberQueryRepository {
     public Member findMemberByName(String memberName) {
         return em.createQuery("select m from Member m" +
                 " join fetch m.membership" +
-                " where m.name = :memberName", Member.class)
+                " where m.username = :memberName", Member.class)
                 .setParameter("memberName", memberName)
                 .getSingleResult();
     }

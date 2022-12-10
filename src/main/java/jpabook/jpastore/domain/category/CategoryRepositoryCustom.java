@@ -9,23 +9,27 @@ import java.util.Optional;
 
 public interface CategoryRepositoryCustom {
 
-    Optional<Category> findByIdFetchJoin(Long id);
+    boolean existsByName(String name);
 
-    Optional<Category> findByNameFetchJoin(String name);
+    Optional<Category> findCategoryById(Long categoryId);
+
+    Optional<Category> findCategoryByIdWithParent(Long id);
+
+    Optional<Category> findCategoryByNameWithParent(String name);
 
     Optional<Category> findParentByCategoryId(Long id);
 
-    List<Category> findAllFetchJoin();
+    List<Category> findAllWithParents();
 
-    Page<Category> findAllFetchJoin(Pageable pageable);
+    Page<Category> findAllWithParents(Pageable pageable);
 
     List<Category> findAllRootParents();
 
     List<Long> findChildIdsByParentId(Long id);
 
-    List<Item> findItemsByCategoryId(Long id);
+    List<Long> findCategoryIdsInChildIdsAndEqName(Long parentId, String name);
 
-    void deleteCategoryItemByItemId(Long id);
+    List<Item> findItemsByCategoryId(Long id);
 
     long totalCount();
 }

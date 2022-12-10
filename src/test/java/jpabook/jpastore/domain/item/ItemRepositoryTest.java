@@ -1,51 +1,72 @@
 package jpabook.jpastore.domain.item;
 
-import jpabook.jpastore.application.item.ItemServiceImpl;
-import jpabook.jpastore.dto.item.BookItemSaveRequestDto;
+import jpabook.jpastore.config.DatabaseCleanUp;
+import jpabook.jpastore.config.TestDBConfig;
+import jpabook.jpastore.config.TestQuerydslConfig;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.annotation.Rollback;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
+import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.test.context.jdbc.Sql;
+import org.springframework.test.context.jdbc.SqlConfig;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@ExtendWith(SpringExtension.class)
-@SpringBootTest
+@Sql(
+        scripts = "classpath:data/data-test.sql",
+        executionPhase = Sql.ExecutionPhase.BEFORE_TEST_METHOD,
+        config = @SqlConfig(transactionMode = SqlConfig.TransactionMode.ISOLATED)
+)
+@Import({TestQuerydslConfig.class, TestDBConfig.class})
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DataJpaTest
 class ItemRepositoryTest {
 
     @Autowired
     private ItemRepository itemRepository;
 
     @Autowired
-    private ItemServiceImpl itemService;
+    private DatabaseCleanUp databaseCleanUp;
 
-    @Transactional
-    @Rollback(false)
+    @AfterEach
+    void tearDown() {
+        databaseCleanUp.cleanUp();
+    }
+
     @Test
-    @DisplayName("상품 추가 && 추가된 상품 조회")
-    public void 추가된_상품_정보_조회() throws Exception {
+    @DisplayName("[성공][repo] Item 엔티티 단일 조회 by Id")
+    public void givenItemId_whenFindItemById_thenReturnsItemEntity() {
         //given
-        BookItemSaveRequestDto requestDto = BookItemSaveRequestDto.builder()
-                .name("book1")
-                .author("김찬희")
-                .price(15000)
-                .stockQuantity(100)
-                .isbn("1234")
-                .build();
+        var itemId = 1L;
 
-        itemService.saveBookItem(requestDto);
         //when
-        List<Item> items = itemRepository.findAll();
+        var itemEntity = itemRepository.findItemById(itemId);
 
         //then
-        Item item = items.get(0);
-        System.out.println(item);
-        assertThat(item.getId()).isEqualTo(1L);
+        assertThat(itemEntity).isPresent();
+        assertThat(itemEntity.get().getName()).isEqualTo("book1");
+        assertThat(itemEntity.get().getId()).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("[성공][repo] Item 엔티티 전체 조회: 페이징/정렬")
+    public void givenPageRequest_whenFindAll_thenReturnsAllItemsPagingResult() {
+        //given
+        var pageRequest = PageRequest.of(0, 5, Sort.Direction.DESC, "id");
+        var condition = ItemSearchCondition.builder().build(); // 검색 조건 없음
+
+        //when
+        var items = itemRepository.findAll(condition, pageRequest);
+
+        //then
+        assertThat(items.getTotalElements()).isEqualTo(9);
+        assertThat(items.getTotalPages()).isEqualTo(2);
+        assertThat(items.getContent().get(0).getId()).isEqualTo(9L);
+        assertThat(items.getContent().get(0).getName()).isEqualTo("movie2");
     }
 }

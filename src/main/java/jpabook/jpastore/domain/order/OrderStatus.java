@@ -8,7 +8,7 @@ public enum OrderStatus {
     PAYMENT_WAITING("결제 대기중"),
     CANCEL("주문 취소");
 
-    String message;
+    final String message;
 
     OrderStatus(String message) {
         this.message = message;
