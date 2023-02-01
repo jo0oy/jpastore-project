@@ -86,5 +86,9 @@ Spring Boot
 * Spring Doc
 
 ## ERD
+
+<img width="97%" src="https://user-images.githubusercontent.com/55842092/215992342-765a8675-4055-4b0b-b865-12a975094281.png">
+<img width="97%" height="80%" src="https://user-images.githubusercontent.com/55842092/215993147-240d1a35-5446-40ee-a6d2-f0c3be083735.png">
+
 ## Feature List
 ## Results
