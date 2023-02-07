@@ -91,4 +91,8 @@ Spring Boot
 <img width="97%" height="80%" src="https://user-images.githubusercontent.com/55842092/215993147-240d1a35-5446-40ee-a6d2-f0c3be083735.png">
 
 ## Feature List
+
+* 상품(Item) 과 Book, Album, Dvd `상속 관계 매핑` 적용 - `단일 테이블` 전략
+* 상품 재고 동시성 문제를 고려해 상품(Item) 조회 쿼리에 `비관적 락(Pessimistic Lock)` 적용
+
 ## Results
