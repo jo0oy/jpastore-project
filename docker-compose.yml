@@ -1,0 +1,34 @@
+version: "3"
+services:
+  jpastore-db:
+    container_name: jpastore-db
+    image: mariadb:10
+    environment:
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=jpastore
+      - MARIADB_USERNAME=${DB_USERNAME}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - TZ=Asia/Seoul
+    volumes:
+      - ./db/config:/etc/mysql/conf.d
+      - ./db/data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    restart: always
+
+  jpastore-jwt-redis:
+    container_name: jpastore-jwt-redis
+    image: redis:6
+    ports:
+      - "6379:6379"
+    restart: always
+
+  jpastore-stock-redis:
+    container_name: jpastore-stock-redis
+    image: redis:6
+    command: --port 6390
+    volumes:
+      - ./redis/stock/redis.conf:/usr/local/etc/redis/redis.conf
+    ports:
+      - "6390:6390"
+    restart: always

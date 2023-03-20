@@ -23,7 +23,7 @@ public class AuthServiceImpl implements AuthService{
     private static final String REFRESH_TOKEN_KEY_PREFIX = "RT:"; // redis 에 저장되는 refreshToken key = RT:{username}
     private static final String LOGOUT_KEY_PREFIX = "LOGOUT:"; // redis 에 저장되는 로그아웃 key = LOGOUT:{AccessToken}
     private final JwtTokenProvider tokenProvider;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> jwtRedisTemplate;
     private final AuthenticationManagerBuilder authenticationManagerBuilder;
 
 
@@ -39,7 +39,7 @@ public class AuthServiceImpl implements AuthService{
         var tokenInfo = tokenProvider.generateToken(authentication);
 
         // redis 에 refreshToken 저장
-        redisTemplate.opsForValue().set(REFRESH_TOKEN_KEY_PREFIX + authentication.getName(),
+        jwtRedisTemplate.opsForValue().set(REFRESH_TOKEN_KEY_PREFIX + authentication.getName(),
                 tokenInfo.getRefreshToken(), tokenInfo.getRefreshTokenExpirationTime(), TimeUnit.MILLISECONDS);
 
         return tokenInfo;
@@ -51,7 +51,7 @@ public class AuthServiceImpl implements AuthService{
         var authentication = tokenProvider.getAuthentication(command.getAccessToken());
         var redisKey = REFRESH_TOKEN_KEY_PREFIX + authentication.getName();
 
-        var refreshToken = (String) redisTemplate.opsForValue().get(redisKey);
+        var refreshToken = (String) jwtRedisTemplate.opsForValue().get(redisKey);
 
         if (Objects.isNull(refreshToken)) {
             throw new JwtExpiredException("리프레시 토큰이 만료되었습니다. 재로그인 해주세요.");
@@ -59,11 +59,11 @@ public class AuthServiceImpl implements AuthService{
 
         // 리프레시 토큰이 유효한 경우
         // 이미 있는 리프레시 토큰 삭제
-        redisTemplate.delete(redisKey);
+        jwtRedisTemplate.delete(redisKey);
 
         var tokenInfo = tokenProvider.generateToken(authentication);
 
-        redisTemplate.opsForValue().set(redisKey, tokenInfo.getRefreshToken(),
+        jwtRedisTemplate.opsForValue().set(redisKey, tokenInfo.getRefreshToken(),
                 tokenInfo.getRefreshTokenExpirationTime(), TimeUnit.MILLISECONDS);
 
         return AuthInfo.AccessToken.builder()
@@ -85,14 +85,14 @@ public class AuthServiceImpl implements AuthService{
         // refreshToken 제거
         var authentication = tokenProvider.getAuthentication(accessToken);
         var refreshTokenKey = REFRESH_TOKEN_KEY_PREFIX + authentication.getName();
-        redisTemplate.delete(refreshTokenKey);
+        jwtRedisTemplate.delete(refreshTokenKey);
 
         // SecurityContext clear
         SecurityContextHolder.clearContext();
 
         // logout 여부 체크할 accessToken Redis 에 입력
         var logoutKey = LOGOUT_KEY_PREFIX + accessToken; // 'LOGOUT:{토큰값}' --> key
-        redisTemplate.opsForValue().set(logoutKey, "logout",
+        jwtRedisTemplate.opsForValue().set(logoutKey, "logout",
                 tokenProvider.getLeftExpirationFromNow(accessToken), TimeUnit.MILLISECONDS);
     }
 }

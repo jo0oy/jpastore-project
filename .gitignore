@@ -67,3 +67,9 @@ Temporary Items
 ### macOS Patch ###
 # iCloud generated files
 *.icloud
+
+# .env
+.env
+
+# ./db/data
+db/data

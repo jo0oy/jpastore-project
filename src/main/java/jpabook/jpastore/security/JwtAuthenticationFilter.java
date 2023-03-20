@@ -21,7 +21,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider tokenProvider;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> jwtRedisTemplate;
 
 
     @Override
@@ -39,7 +39,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         try {
             if (StringUtils.hasText(token) && tokenProvider.validateToken(token)) {
                 // 로그아웃 처리된 토큰인지 확인
-                var isLogout = (String) redisTemplate.opsForValue().get("LOGOUT:" + token);
+                var isLogout = (String) jwtRedisTemplate.opsForValue().get("LOGOUT:" + token);
                 log.info("isLogout={}", !ObjectUtils.isEmpty(isLogout));
                 if (ObjectUtils.isEmpty(isLogout)) {
                     Authentication authentication = tokenProvider.getAuthentication(token);

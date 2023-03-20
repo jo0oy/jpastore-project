@@ -50,7 +50,7 @@ public class SecurityConfig {
     private final PrincipalUserDetailsService principalUserDetailsService;
     private final PrincipalOAuth2UserService principalOAuth2UserService;
     private final JwtTokenProvider tokenProvider;
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, Object> jwtRedisTemplate;
 
     private static final String[] PERMIT_URL_ARRAY = {
             /* swagger v3 */
@@ -72,8 +72,8 @@ public class SecurityConfig {
     }
 
     @Bean
-    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider tokenProvider, RedisTemplate<String, Object> redisTemplate) {
-        return new JwtAuthenticationFilter(tokenProvider, redisTemplate);
+    public JwtAuthenticationFilter jwtAuthenticationFilter(JwtTokenProvider tokenProvider, RedisTemplate<String, Object> jwtRedisTemplate) {
+        return new JwtAuthenticationFilter(tokenProvider, jwtRedisTemplate);
     }
 
     @Bean
@@ -94,7 +94,7 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationSuccessHandler oAuth2AuthenticationSuccessHandler() {
-        return new OAuth2AuthenticationSuccessHandler(tokenProvider, redisTemplate);
+        return new OAuth2AuthenticationSuccessHandler(tokenProvider, jwtRedisTemplate);
     }
 
     @Bean
@@ -166,7 +166,7 @@ public class SecurityConfig {
                         .failureHandler(oAuth2AuthenticationFailureHandler());
 
         http
-                .addFilterBefore(jwtAuthenticationFilter(tokenProvider, redisTemplate), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(tokenProvider, jwtRedisTemplate), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -1,6 +1,17 @@
 spring:
   profiles:
-    include: oauth2, jwt, swagger
+    active: local
+    group:
+      local:
+        - jwt
+        - oauth2
+        - swagger
+
+---
+spring:
+  config:
+    activate:
+      on-profile: local
 
   messages:
     basename: errors
@@ -22,6 +33,10 @@ spring:
 
   redis:
     port: 6379
+    host: localhost
+
+  stock-redis:
+    port: 6390
     host: localhost
 
 logging:
