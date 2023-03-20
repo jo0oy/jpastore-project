@@ -6,15 +6,13 @@ public interface CategoryService {
 
     Long registerCategory(CategoryCommand.RegisterReq command);
 
-    // 1. 아이디로 조회
-    // v1. dto 변환 과정에서 불필요한 parent category 까지 in 쿼리에 포함.
+    // 단일 카테고리 상세 조회 with 카테고리 상품 리스트
     CategoryInfo.DetailWithItemsInfo getCategoryWithItems(Long id);
 
-    // v2. 컬렉션 매핑관계에 접근하는 순서 변동한 CategoryInfo.MainInfo 로 변환(v1 문제 해결)
-    // -> parent 를 가장 마지막에 접근
+    // 단일 카테고리 조회 by id
     CategoryInfo.MainInfo getCategory(Long id);
 
-    // v3. parent fetch join 으로 가져올 경우 v1과 동일한 문제 발생.
+    // 단일 카테고리 조회 by id, fetch join parent
     CategoryInfo.MainInfo getCategoryV2(Long id);
 
     // 카테고리 계층 관계 리스트 조회

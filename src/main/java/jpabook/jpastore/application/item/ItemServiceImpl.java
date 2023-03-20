@@ -34,7 +34,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public Long saveBookItem(ItemCommand.BookItemRegisterReq command) {
-        log.info("creating book item....");
+        log.info("saving book item....");
         Book createdItem = bookRepository.save(command.toEntity());
 
         setCategoryItem(command.getCategoryId(), createdItem);
@@ -45,7 +45,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public Long saveAlbumItem(ItemCommand.AlbumItemRegisterReq command) {
-        log.info("creating album item....");
+        log.info("saving album item....");
         Album createdItem = albumRepository.save(command.toEntity());
 
         setCategoryItem(command.getCategoryId(), createdItem);
@@ -56,7 +56,7 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional
     public Long saveDvdItem(ItemCommand.DvdItemRegisterReq command) {
-        log.info("creating dvd item....");
+        log.info("saving dvd item....");
         Dvd createdItem = dvdRepository.save(command.toEntity());
 
         setCategoryItem(command.getCategoryId(), createdItem);
@@ -66,7 +66,6 @@ public class ItemServiceImpl implements ItemService {
 
     /**
      * 단일 상품 조회
-     * @return
      */
     @Override
     public ItemInfo.MainInfo getItem(Long id) {
@@ -77,6 +76,7 @@ public class ItemServiceImpl implements ItemService {
         return new ItemInfo.MainInfo(item);
     }
 
+    // v1: 메서드 내에서 상품 종류 파악, 상품에 따른 DTO 에 mapping 후 리턴
     @Override
     public <T> T itemDetail_V1(Long id) {
         log.info("get item detail by id={}", id);
@@ -98,6 +98,7 @@ public class ItemServiceImpl implements ItemService {
         return (T) new ItemInfo.DetailInfo<>(item);
     }
 
+    // v2: 제네릭 상품 DTO 에 상품 엔티티 전달 -> DTO 에서 타입 판별
     @Override
     public ItemInfo.DetailInfo<Item> itemDetail_V2(Long id) {
         log.info("get item detail by id={}", id);
@@ -109,7 +110,6 @@ public class ItemServiceImpl implements ItemService {
 
     /**
      * 상품명으로 상품 리스트 검색
-     * @return
      */
     // Query Method 사용 버전 : case insensitive
     @Override
@@ -133,6 +133,11 @@ public class ItemServiceImpl implements ItemService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * 전체 상품 리스트 조회 (페이징/정렬/검색 기능)
+     * @param condition
+     * @param pageable
+     */
     @Override
     public Page<ItemInfo.MainInfo> items(ItemCommand.SearchCondition condition, Pageable pageable) {
         log.info("item paging list by search condition...");
@@ -141,7 +146,7 @@ public class ItemServiceImpl implements ItemService {
     }
 
     /**
-     * 상품 전제 조회
+     * 상품 전체 리스트 조회
      * @return
      */
     @Override

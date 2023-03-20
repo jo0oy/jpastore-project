@@ -90,10 +90,10 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 단일 주문 조회
-     * @return
      */
 
     // 1. spring data jpa 기본 메소드 활용 -> dto 에서 연관관계 매핑 엔티티에 접근하기 때문에 N+1 문제 발생!
+    // 글로벌 배치 설정으로 문제 해결!
     @Override
     public OrderInfo.MainInfo getOrder(Long orderId, String authUsername) {
         Order order = orderRepository.findById(orderId).orElseThrow(
@@ -108,7 +108,7 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // 2. 일대일 매핑 관계(member, delivery) 페치조인
-
+    // 단일 주문 간단 정보 조회
     @Override
     public OrderInfo.SimpleInfo getOrderSimpleInfo(Long orderId, String authUsername) {
         Order order = orderRepository.findOrderWithMemberDelivery(orderId)
@@ -121,6 +121,8 @@ public class OrderServiceImpl implements OrderService {
 
         return new OrderInfo.SimpleInfo(order);
     }
+
+    // 3. 일대일 매핑 관계(member, delivery) 페치조인 -> 나머지 컬렉션은 글로벌 배치 설정으로 in query
     @Override
     public OrderInfo.MainInfo getOrderFetch(Long orderId, String authUsername) {
         Order order = orderRepository.findOrderWithMemberDelivery(orderId)
@@ -136,7 +138,6 @@ public class OrderServiceImpl implements OrderService {
 
     /**
      * 전체 주문 리스트 조회
-     * @return
      */
 
     // 1-1. ToOne 관계(member, delivery) 페치조인 - List 조회
@@ -148,19 +149,22 @@ public class OrderServiceImpl implements OrderService {
     }
 
     // 1-2. ToOne 관계(member, delivery) 페치조인 - Page 조회
-
     @Override
     public Page<OrderInfo.MainInfo> listOrder(Pageable pageable) {
 
         return orderRepository.findAllWithMemberDelivery(PageRequestUtils.of(pageable))
                 .map(OrderInfo.MainInfo::new);
     }
+
+    // 1-3. ToOne 관계(member, delivery) 페치조인 - 간단 정보 조회(컬렉션 접근 없음)
     @Override
     public Page<OrderInfo.SimpleInfo> listSimpleOrder(Pageable pageable) {
         return orderRepository.findAllWithMemberDelivery(PageRequestUtils.of(pageable))
                 .map(OrderInfo.SimpleInfo::new);
     }
 
+    // 1-4. ToOne, ToMany 모두 페치조인 - 'distinct' 키워드 없음
+    // 카타시안 곱의 결과 반환!
     @Override
     public List<OrderInfo.MainInfo> listOrderFetchOrderItems() {
         return orderRepository.findAllWithOrderItems()
@@ -169,6 +173,8 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
     }
 
+    // 1-5. ToOne, ToMany 모두 페치조인 - 'distinct' 키워드 있음
+    // 정상 결과 반환, 하지만 애플리케이션 상에서 distinct 처리하기 때문에 성능상 not good
     @Override
     public List<OrderInfo.MainInfo> listOrderFetchOrderItemsDistinct() {
         return orderRepository.findAllWithOrderItemsDistinct()
@@ -177,19 +183,21 @@ public class OrderServiceImpl implements OrderService {
                 .collect(Collectors.toList());
     }
 
+    // 1-6. 전체 주문 리스트 조회 (페이징, 정렬, 검색 기능)
+    // ToOne(Member, Delivery)은 모두 페치조인 후 글로벌 패치 설정을 통한 in query 적용
     @Override
     public Page<OrderInfo.MainInfo> listOrder(OrderCommand.OrderSearchCondition condition, Pageable pageable) {
         return orderRepository.findByCondition(condition.toSearchCondition(), PageRequestUtils.of(pageable))
                 .map(OrderInfo.MainInfo::new);
     }
 
-
+    // 1-7. DTO(OrderQueryInfo.SimpleInfo)로 쿼리 직접 조회
     @Override
     public List<OrderQueryInfo.SimpleInfo> listOrderSimpleInfos() {
         return orderRepository.findAllOrderSimpleInfo();
     }
 
-
+    // 1-7. DTO(OrderQueryInfo.MainInfo)로 쿼리 직접 조회
     @Override
     public List<OrderQueryInfo.MainInfo> listOrderQueryInfos() {
         return orderRepository.findAllOrderInfo();
@@ -257,6 +265,7 @@ public class OrderServiceImpl implements OrderService {
         return (payInfo == Pay.BANK_TRANS) ? OrderStatus.PAYMENT_WAITING : OrderStatus.ORDER;
     }
 
+    // 주문 접근 권한 검증 메서드
     private void checkAuthority(Order order, String username) {
         var member = memberRepository.findByUsername(username).orElseThrow(
                 () -> {

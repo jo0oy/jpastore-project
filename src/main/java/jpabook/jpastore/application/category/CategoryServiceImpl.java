@@ -56,7 +56,7 @@ public class CategoryServiceImpl implements CategoryService {
      */
 
     // 1. 아이디로 조회
-    // v1. 컬렉션 매핑관계에 접근하는 순서 변동한 CategoryInfo.MainInfo 로 변환(문제 해결)
+    // v1. 컬렉션 매핑관계에 접근하는 순서 변동한 CategoryInfo.MainInfo 로 변환 (부모의 자식까지 in 쿼리로 조회하는 문제 해결)
     // -> parent 를 가장 마지막에 접근
     @Override
     public CategoryInfo.MainInfo getCategory(Long id) {
@@ -79,7 +79,7 @@ public class CategoryServiceImpl implements CategoryService {
         return new CategoryInfo.MainInfo(category);
     }
 
-    // 카테고리 상세 정보 조회 (상품리스트 포함). dto 변환 과정에서 불필요한 parent category 까지 in 쿼리에 포함.
+    // 카테고리 상세 정보 조회 (부모, 자식 카테고리 정보, 상품리스트 포함)
     // 카테고리 상품 리스트 조회 + 해당 카테고리 상세 정보 포함
     @Override
     public CategoryInfo.DetailWithItemsInfo getCategoryWithItems(Long id) {
@@ -116,7 +116,7 @@ public class CategoryServiceImpl implements CategoryService {
     }
 
     /**
-     * 카테고리-상품 리스트 조회
+     * 전체 카테고리-상품 리스트 조회
      * @return
      */
     @Override
@@ -126,6 +126,7 @@ public class CategoryServiceImpl implements CategoryService {
                 .collect(Collectors.toList());
     }
 
+    // categoryId에 해당하는 카테고리의 상품 리스트 정보 조회
     @Override
     public CategoryInfo.CategoryItemListInfo categoryItemListByCategoryId(Long categoryId) {
         log.info("finding simple items info by category id={}", categoryId);

@@ -3,19 +3,15 @@ package jpabook.jpastore.application.item;
 import jpabook.jpastore.domain.item.Item;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
 public interface ItemService {
 
-    @Transactional
     Long saveBookItem(ItemCommand.BookItemRegisterReq command);
 
-    @Transactional
     Long saveAlbumItem(ItemCommand.AlbumItemRegisterReq command);
 
-    @Transactional
     Long saveDvdItem(ItemCommand.DvdItemRegisterReq command);
 
     ItemInfo.MainInfo getItem(Long id);
@@ -34,9 +30,7 @@ public interface ItemService {
 
     List<ItemInfo.MainInfo> itemList();
 
-    @Transactional
     void updateItemInfo(Long id, ItemCommand.UpdateInfoReq command);
 
-    @Transactional
     void delete(Long id);
 }

@@ -15,14 +15,13 @@ public interface OrderService {
     /**
      * 단일 주문 조회
      */
-
     // 1. spring data jpa 기본 메소드 활용 -> dto 에서 연관관계 매핑 엔티티에 접근하기 때문에 N+1 문제 발생!
     OrderInfo.MainInfo getOrder(Long orderId, String authUsername);
 
-    // 2. Member, Delivery 페치 조인 조회 후 simple info 로 변환.
+    // 2. Member, Delivery 페치 조인 조회 후 simple info(1:1 연관관계 정보만 포함한 dto) 로 변환.
     OrderInfo.SimpleInfo getOrderSimpleInfo(Long orderId, String authUsername);
 
-    // 3. getOrder 페치조인 통해 조회 (Member, Delivery)
+    // 3. getOrder 페치조인 통해 조회 (Member, Delivery), default_batch_fetch 설정으로 in 쿼리 발생.
     OrderInfo.MainInfo getOrderFetch(Long orderId, String authUsername);
 
     /**

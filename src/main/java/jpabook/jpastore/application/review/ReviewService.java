@@ -13,10 +13,10 @@ public interface ReviewService {
     // 리뷰 조회 by id
     ReviewInfo.MainInfo getReviewInfo(Long reviewId);
 
-    // 리뷰 리스트 조회 by 검색 조건
+    // 전체 리뷰 리스트 조회 (검색, 최신순 정렬)
     List<ReviewInfo.MainInfo> listReview(ReviewCommand.SearchCondition condition);
 
-    // 리뷰 리스트 페이징 조회 by 검색 조건
+    // 전체 리뷰 리스트 조회 (페이징/정렬/검색)
     Page<ReviewInfo.MainInfo> listReview(ReviewCommand.SearchCondition condition, Pageable pageable);
 
     // 리뷰 정보 수정
